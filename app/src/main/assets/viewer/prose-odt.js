@@ -1076,7 +1076,7 @@ function vwReadOdt(buffer, container) {
           // An encrypted document says so in its manifest and nowhere else: its
           // content.xml is there, and is noise
           if (parts[2] && /<manifest:encryption-data[\s>]/.test(parts[2])) {
-            throw new Error("This document is protected by a password, and Gander " +
+            throw new Error("This document is protected by a password, and Office Lite " +
               "cannot open password-protected OpenDocument files.");
           }
           if (!parts[0]) throw new Error("This file has no document inside it.");

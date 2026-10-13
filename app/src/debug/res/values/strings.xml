@@ -4,5 +4,5 @@
   APK even by accident: the release build never compiles this folder.
 -->
 <resources>
-    <string name="app_name">Gander debug</string>
+    <string name="app_name">Office Lite debug</string>
 </resources>

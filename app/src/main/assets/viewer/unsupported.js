@@ -2,7 +2,7 @@ document.getElementById("fname").textContent = vwName;
 var hint = document.getElementById("hint");
 if (vwExt === "ppt") {
   hint.textContent =
-    "This is a legacy Office format (.ppt). If you re-save it as .pptx, Gander can display it.";
+    "This is a legacy Office format (.ppt). If you re-save it as .pptx, Office Lite can display it.";
 } else {
   // Nothing useful to add; leave the card to the action below
   hint.style.display = "none";

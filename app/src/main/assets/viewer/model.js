@@ -196,7 +196,7 @@ function vwModelMaxTriangles() {
 function vwModelTooLarge(triangles, most) {
   return vwModelProblem(
     "This model is too large to show",
-    "Gander draws up to " + vwModelCount(most) + " triangles on a phone with this much " +
+    "Office Lite draws up to " + vwModelCount(most) + " triangles on a phone with this much " +
     "memory, and this model has " + (triangles > 0 ? vwModelCount(triangles) : "more") + "."
   );
 }
@@ -960,7 +960,7 @@ function vwModelGroundColour() {
   if (!vwModelGl) {
     vwModelFail(
       "3D models cannot be shown on this phone",
-      "Gander draws them with WebGL, and Android System WebView has turned WebGL off on " +
+      "Office Lite draws them with WebGL, and Android System WebView has turned WebGL off on " +
       "this phone, which it does when the phone's graphics driver is known to misbehave. " +
       "An update to Android System WebView can turn it back on."
     );

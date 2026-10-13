@@ -98,7 +98,7 @@ function vwNeedsNewerWebView(what, have, needs, locked) {
   }
   vwError(
     "Android System WebView is too old to show " + what,
-    "Gander opens " + what + " using Android System WebView, the browser engine built " +
+    "Office Lite opens " + what + " using Android System WebView, the browser engine built " +
     "into your phone. " +
     (have && needs
       ? what + " need version " + needs + " or newer, and this one is " + have + ". "
