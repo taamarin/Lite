@@ -521,7 +521,7 @@ function docOpen(bytes) {
   var nFib = docU16(main, 2);
   var flags = docU16(main, 0x0A);
   if (flags & 0x100) {
-    docFail("This document is protected by a password, and Gander cannot open password-protected Word documents.");
+    docFail("This document is protected by a password, and Office Lite cannot open password-protected Word documents.");
   }
   var old = nFib < 0xC1;
   var doc = {

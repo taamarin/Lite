@@ -41,7 +41,7 @@ vwFetchDoc("buffer")
     var kind = vwProseSniff(new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 80)));
     if (!kind) {
       throw new Error("It does not begin the way an OpenDocument, Rich Text or Word " +
-        "97-2003 file does. If it was saved by an older Word, Word 2 say, Gander cannot " +
+        "97-2003 file does. If it was saved by an older Word, Word 2 say, Office Lite cannot " +
         "read it; re-saving it in any of those three formats will help.");
     }
     return VW_PROSE_READERS[kind](buffer, document.getElementById("container"));
