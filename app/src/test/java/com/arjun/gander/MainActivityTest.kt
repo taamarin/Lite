@@ -883,4 +883,97 @@ class MainActivityTest {
         assertThat(second.rowTitles()).doesNotContain("notes.txt")
         assertThat(second.rowTitles()).doesNotContain("sheet.xlsx")
     }
+
+    // ---------------------------------------------------------------
+    // Home file type chips and recents batch selection
+    // ---------------------------------------------------------------
+
+    @Test
+    fun homeFileTypeFilterShowsWhenRecentsExist() {
+        granted("six-pages.pdf", "sample.pdf")
+        val controller = home()
+        val filterScroll = controller.get().findViewById<View>(R.id.typeFilterScroll)
+        assertThat(filterScroll.visibility).isEqualTo(View.VISIBLE)
+    }
+
+    @Test
+    fun homeFileTypeFilterFiltersRecentFiles() {
+        granted("six-pages.pdf", "sample.pdf")
+        granted("six-pages.pdf", "notes.txt")
+        val controller = home()
+        val titlesBefore = controller.rowTitles()
+        assertThat(titlesBefore).contains("sample.pdf")
+        assertThat(titlesBefore).contains("notes.txt")
+
+        val chipGroup = controller.get().findViewById<com.google.android.material.chip.ChipGroup>(R.id.typeFilterGroup)
+        val pdfChip = (0 until chipGroup.childCount)
+            .map { chipGroup.getChildAt(it) as com.google.android.material.chip.Chip }
+            .first { it.tag == "PDF" }
+        pdfChip.performClick()
+        shadowOf(context.mainLooper).idle()
+
+        val titlesAfter = controller.rowTitles()
+        assertThat(titlesAfter).contains("sample.pdf")
+        assertThat(titlesAfter).doesNotContain("notes.txt")
+    }
+
+    @Test
+    fun selectingRecentFilesAndBatchDeleteRemovesThem() {
+        granted("six-pages.pdf", "file1.pdf")
+        granted("six-pages.pdf", "file2.pdf")
+        val controller = home()
+        val rv = controller.list()
+        val adapter = rv.adapter!!
+
+        val headerHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(headerHolder, 0)
+        val selectBtn = headerHolder.itemView.findViewById<TextView>(R.id.headerAction)
+        assertThat(selectBtn.visibility).isEqualTo(View.VISIBLE)
+        selectBtn.performClick()
+        shadowOf(context.mainLooper).idle()
+
+        val selectAllHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(selectAllHolder, 0)
+        val selectAllBtn = selectAllHolder.itemView.findViewById<TextView>(R.id.headerSecondaryAction)
+        assertThat(selectAllBtn.text.toString()).isEqualTo(context.getString(R.string.select_all))
+        selectAllBtn.performClick()
+        shadowOf(context.mainLooper).idle()
+
+        val deleteHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(deleteHolder, 0)
+        val deleteBtn = deleteHolder.itemView.findViewById<TextView>(R.id.headerDeleteAction)
+        assertThat(deleteBtn.visibility).isEqualTo(View.VISIBLE)
+        deleteBtn.performClick()
+        shadowOf(context.mainLooper).idle()
+
+        latestDialog()!!.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        shadowOf(context.mainLooper).idle()
+
+        assertThat(Recents.all(context)).isEmpty()
+    }
+
+    @Test
+    fun recentsSelectionModeCanBeCancelled() {
+        granted("six-pages.pdf", "file1.pdf")
+        val controller = home()
+        val rv = controller.list()
+        val adapter = rv.adapter!!
+
+        val headerHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(headerHolder, 0)
+        headerHolder.itemView.findViewById<TextView>(R.id.headerAction).performClick()
+        shadowOf(context.mainLooper).idle()
+
+        val cancelHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(cancelHolder, 0)
+        val cancelBtn = cancelHolder.itemView.findViewById<TextView>(R.id.headerAction)
+        assertThat(cancelBtn.text.toString()).isEqualTo(context.getString(R.string.cancel))
+        cancelBtn.performClick()
+        shadowOf(context.mainLooper).idle()
+
+        val restoredHolder = adapter.createViewHolder(rv, 0)
+        adapter.bindViewHolder(restoredHolder, 0)
+        assertThat(restoredHolder.itemView.findViewById<TextView>(R.id.headerAction).text.toString())
+            .isEqualTo(context.getString(R.string.select))
+    }
 }

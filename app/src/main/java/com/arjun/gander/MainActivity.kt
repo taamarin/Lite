@@ -53,10 +53,15 @@ class MainActivity : AppCompatActivity() {
 
     private val stack = ArrayDeque<Crumb>()
     private val activeFilters = mutableSetOf<String>()
+    private var homeFilterType: String? = null
+    private var isRecentsSelectionMode = false
+    private val selectedRecentUris = mutableSetOf<String>()
     private val adapter = RowAdapter()
     private lateinit var toolbar: MaterialToolbar
     private lateinit var lockup: View
     private lateinit var progress: LinearProgressIndicator
+    private lateinit var typeFilterScroll: View
+    private lateinit var typeFilterGroup: com.google.android.material.chip.ChipGroup
     private lateinit var list: RecyclerView
     private lateinit var welcome: View
     private lateinit var fab: ExtendedFloatingActionButton
@@ -111,6 +116,12 @@ class MainActivity : AppCompatActivity() {
 
     private val backCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
+            if (isRecentsSelectionMode) {
+                isRecentsSelectionMode = false
+                selectedRecentUris.clear()
+                render()
+                return
+            }
             stack.removeLast()
             if (stack.isEmpty()) {
                 activeFilters.clear()
@@ -208,7 +219,49 @@ class MainActivity : AppCompatActivity() {
 
         restoreStack(savedInstanceState)
         restoreFilters(savedInstanceState)
+        typeFilterScroll = findViewById(R.id.typeFilterScroll)
+        typeFilterGroup = findViewById(R.id.typeFilterGroup)
+        setupHomeFilterChips()
         onBackPressedDispatcher.addCallback(this, backCallback)
+    }
+
+    private fun setupHomeFilterChips() {
+        typeFilterGroup.removeAllViews()
+        val allChip = com.google.android.material.chip.Chip(this).apply {
+            id = View.generateViewId()
+            text = getString(R.string.filter_all)
+            isCheckable = true
+            tag = null
+        }
+        typeFilterGroup.addView(allChip)
+
+        val chipIdMap = mutableMapOf<String, Int>()
+        SUPPORTED_FILTER_TYPES.forEach { item ->
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                id = View.generateViewId()
+                text = getString(item.labelRes)
+                isCheckable = true
+                tag = item.badge
+            }
+            typeFilterGroup.addView(chip)
+            chipIdMap[item.badge] = chip.id
+        }
+
+        val currentBadge = homeFilterType
+        if (currentBadge != null && chipIdMap.containsKey(currentBadge)) {
+            typeFilterGroup.check(chipIdMap.getValue(currentBadge))
+        } else {
+            typeFilterGroup.check(allChip.id)
+        }
+
+        typeFilterGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: allChip.id
+            val selectedBadge = (group.findViewById<com.google.android.material.chip.Chip>(checkedId))?.tag as? String
+            if (homeFilterType != selectedBadge) {
+                homeFilterType = selectedBadge
+                render()
+            }
+        }
     }
 
     /**
@@ -234,12 +287,22 @@ class MainActivity : AppCompatActivity() {
         outState.putStringArrayList(STATE_DOC_IDS, ArrayList(stack.map { it.docId }))
         outState.putStringArrayList(STATE_LABELS, ArrayList(stack.map { it.label }))
         outState.putStringArrayList(STATE_ACTIVE_FILTERS, ArrayList(activeFilters))
+        outState.putString(STATE_HOME_FILTER_TYPE, homeFilterType)
+        outState.putBoolean(STATE_RECENTS_SELECTION_MODE, isRecentsSelectionMode)
+        outState.putStringArrayList(STATE_SELECTED_RECENTS, ArrayList(selectedRecentUris))
     }
 
     private fun restoreFilters(state: Bundle?) {
         val saved = state?.getStringArrayList(STATE_ACTIVE_FILTERS) ?: return
         activeFilters.clear()
         activeFilters.addAll(saved)
+        homeFilterType = state?.getString(STATE_HOME_FILTER_TYPE)
+        isRecentsSelectionMode = state?.getBoolean(STATE_RECENTS_SELECTION_MODE, false) ?: false
+        val selected = state?.getStringArrayList(STATE_SELECTED_RECENTS)
+        if (selected != null) {
+            selectedRecentUris.clear()
+            selectedRecentUris.addAll(selected)
+        }
     }
 
     private fun restoreStack(state: Bundle?) {
@@ -452,7 +515,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun render() {
         val here = stack.lastOrNull()
-        backCallback.isEnabled = here != null
+        backCallback.isEnabled = here != null || isRecentsSelectionMode
         // At the root the wordmark is the title, centred; inside a folder the title is the
         // folder's name, where Android puts it, beside the back arrow. A mark is an identity
         // and a folder name is a location, so these are two kinds of content sharing a slot
@@ -492,6 +555,9 @@ class MainActivity : AppCompatActivity() {
         // Read here, on the main thread, which is the only one that changes it
         val hidden = pending?.uri
         val filters = activeFilters.toSet()
+        val currentHomeFilter = homeFilterType
+        val selectionMode = isRecentsSelectionMode
+        val selectedUris = selectedRecentUris.toSet()
 
         loader.execute {
             // Checked here as well as after, because loader is a single thread: without
@@ -499,7 +565,11 @@ class MainActivity : AppCompatActivity() {
             // wait for the whole of the first, which on the slow provider this exists
             // for is the wait it was meant to remove.
             if (token != renderToken) return@execute
-            val screen = if (here == null) homeRows(hidden) else folderRows(here, filters)
+            val screen = if (here == null) {
+                homeRows(hidden, currentHomeFilter, selectionMode, selectedUris)
+            } else {
+                folderRows(here, filters)
+            }
             main.post {
                 main.removeCallbacks(announce)
                 if (token != renderToken || isDestroyed) return@post
@@ -508,6 +578,7 @@ class MainActivity : AppCompatActivity() {
                 // moved on cannot put the welcome block back over a folder they are in.
                 welcome.visibility = if (screen.welcome) View.VISIBLE else View.GONE
                 list.visibility = if (screen.welcome) View.GONE else View.VISIBLE
+                typeFilterScroll.visibility = if (here == null && !screen.welcome) View.VISIBLE else View.GONE
                 if (screen.welcome) fab.hide() else fab.show()
                 adapter.submit(screen.rows)
             }
@@ -591,8 +662,36 @@ class MainActivity : AppCompatActivity() {
         removal.commit()
     }
 
+    private fun confirmDeleteSelectedRecents() {
+        val count = selectedRecentUris.size
+        if (count == 0) return
+        val toDelete = selectedRecentUris.toSet()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.remove_selected_recent_title)
+            .setMessage(getString(R.string.remove_selected_recent_message, count))
+            .setPositiveButton(R.string.delete) { _, _ ->
+                toDelete.forEach { uri ->
+                    Recents.remove(this, uri)
+                    Thumbs.evict(this, uri)
+                }
+                selectedRecentUris.clear()
+                isRecentsSelectionMode = false
+                render()
+                Snackbar.make(list, R.string.removed, Snackbar.LENGTH_LONG)
+                    .setAnchorView(fab)
+                    .show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     /** The home screen, without the row for [hidden], whose removal waits on its Undo bar. */
-    private fun homeRows(hidden: String?): Screen {
+    private fun homeRows(
+        hidden: String?,
+        filterType: String? = homeFilterType,
+        selectionMode: Boolean = isRecentsSelectionMode,
+        selectedUris: Set<String> = selectedRecentUris.toSet()
+    ): Screen {
         val recents = Recents.all(this)
         // Labelled first, then sorted. sortedBy runs its selector on every comparison,
         // so naming the tree inside it cost a provider query per comparison rather than
@@ -608,23 +707,96 @@ class MainActivity : AppCompatActivity() {
         // the ordinary list comes back for good. A row waiting on its Undo bar still
         // counts, so undoing the last one never has to bring the list back.
         if (recents.isEmpty() && roots.isEmpty()) return Screen(emptyList(), welcome = true)
-        val shownRecents = recents.filter { it.uri != hidden }
+        val unhiddenRecents = recents.filter { it.uri != hidden }
+        val shownRecents = if (filterType != null) {
+            unhiddenRecents.filter { r ->
+                val (badge, _) = badgeFor(r.name, null)
+                badge == filterType
+            }
+        } else {
+            unhiddenRecents
+        }
         val shownRoots = roots.filter { (perm, _) -> perm.uri.toString() != hidden }
 
         val rows = mutableListOf<Row>()
-        rows += Row.Header(getString(R.string.recent_files))
+        if (unhiddenRecents.isNotEmpty()) {
+            val allSelected = shownRecents.isNotEmpty() && shownRecents.all { it.uri in selectedUris }
+            val header = if (!selectionMode) {
+                Row.Header(
+                    title = getString(R.string.recent_files),
+                    actionText = getString(R.string.select),
+                    onAction = {
+                        isRecentsSelectionMode = true
+                        selectedRecentUris.clear()
+                        render()
+                    }
+                )
+            } else {
+                Row.Header(
+                    title = getString(R.string.recent_files),
+                    actionText = getString(R.string.cancel),
+                    onAction = {
+                        isRecentsSelectionMode = false
+                        selectedRecentUris.clear()
+                        render()
+                    },
+                    secondaryText = if (allSelected) {
+                        getString(R.string.deselect_all)
+                    } else {
+                        getString(R.string.select_all)
+                    },
+                    onSecondaryAction = {
+                        if (allSelected) {
+                            selectedRecentUris.clear()
+                        } else {
+                            selectedRecentUris.addAll(shownRecents.map { it.uri })
+                        }
+                        render()
+                    },
+                    deleteText = if (selectedUris.isNotEmpty()) {
+                        getString(R.string.delete_selected, selectedUris.size)
+                    } else null,
+                    onDelete = if (selectedUris.isNotEmpty()) {
+                        { confirmDeleteSelectedRecents() }
+                    } else null
+                )
+            }
+            rows += header
+        } else {
+            rows += Row.Header(getString(R.string.recent_files))
+        }
+
         if (shownRecents.isEmpty()) {
-            rows += Row.Hint(getString(R.string.no_recents_hint))
+            val hint = if (filterType != null) {
+                getString(R.string.filter_empty)
+            } else {
+                getString(R.string.no_recents_hint)
+            }
+            rows += Row.Hint(hint)
         } else {
             shownRecents.forEach { r ->
                 val (badge, color) = badgeFor(r.name, null)
                 val ext = r.name.substringAfterLast('.', "").lowercase()
                 val uri = Uri.parse(r.uri)
+                val isSelected = r.uri in selectedUris
                 rows += Row.Item(
-                    badge, color, r.name,
-                    DateUtils.getRelativeTimeSpanString(r.time).toString(),
-                    onClick = { openInViewer(uri) },
-                    onRemove = { kept ->
+                    badge = badge,
+                    color = color,
+                    title = r.name,
+                    subtitle = DateUtils.getRelativeTimeSpanString(r.time).toString(),
+                    onClick = {
+                        if (isRecentsSelectionMode) {
+                            if (isSelected) {
+                                selectedRecentUris.remove(r.uri)
+                            } else {
+                                selectedRecentUris.add(r.uri)
+                            }
+                            render()
+                        } else {
+                            openInViewer(uri)
+                        }
+                    },
+                    onRemove = if (selectionMode) null else { kept ->
                         askToRemove(
                             R.string.remove_recent_title,
                             getString(R.string.remove_recent_message, r.name),
@@ -637,7 +809,25 @@ class MainActivity : AppCompatActivity() {
                         }
                     },
                     thumbUri = uri.takeIf { Thumbs.supported(FileKind.detect(ext, null), ext) },
-                    thumbExt = ext
+                    thumbExt = ext,
+                    selectable = selectionMode,
+                    isSelected = isSelected,
+                    onToggleSelect = {
+                        if (isSelected) {
+                            selectedRecentUris.remove(r.uri)
+                        } else {
+                            selectedRecentUris.add(r.uri)
+                        }
+                        render()
+                    },
+                    onLongClick = {
+                        if (!isRecentsSelectionMode) {
+                            isRecentsSelectionMode = true
+                            selectedRecentUris.clear()
+                            selectedRecentUris.add(r.uri)
+                            render()
+                        }
+                    }
                 )
             }
         }
@@ -647,12 +837,16 @@ class MainActivity : AppCompatActivity() {
             rows += Row.Item(
                 "DIR", DIR_COLOR, label, null,
                 onClick = {
+                    if (isRecentsSelectionMode) {
+                        isRecentsSelectionMode = false
+                        selectedRecentUris.clear()
+                    }
                     stack.addLast(
                         Crumb(perm.uri, DocumentsContract.getTreeDocumentId(perm.uri), label)
                     )
                     render()
                 },
-                onRemove = { kept ->
+                onRemove = if (selectionMode) null else { kept ->
                     askToRemove(
                         R.string.remove_folder_title,
                         getString(R.string.remove_folder_message, label),
@@ -676,7 +870,13 @@ class MainActivity : AppCompatActivity() {
             )
         }
         rows += Row.Item("+", ADD_COLOR, getString(R.string.add_folder), null,
-            onClick = { openTree.launch(null) })
+            onClick = {
+                if (isRecentsSelectionMode) {
+                    isRecentsSelectionMode = false
+                    selectedRecentUris.clear()
+                }
+                openTree.launch(null)
+            })
         return Screen(rows)
     }
 
@@ -879,5 +1079,8 @@ class MainActivity : AppCompatActivity() {
         const val STATE_DOC_IDS = "stack.docIds"
         const val STATE_LABELS = "stack.labels"
         const val STATE_ACTIVE_FILTERS = "active_filters"
+        const val STATE_HOME_FILTER_TYPE = "home_filter_type"
+        const val STATE_RECENTS_SELECTION_MODE = "recents_selection_mode"
+        const val STATE_SELECTED_RECENTS = "selected_recents"
     }
 }
