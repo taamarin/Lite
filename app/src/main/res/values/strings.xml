@@ -5,11 +5,11 @@
          detail goes looking. The first run gets welcome_headline instead. -->
     <string name="main_subtitle">Open and view documents, spreadsheets, slides and photos. Everything renders on your phone, nothing is uploaded.</string>
     <!-- The site's own h1, docs/index.html -->
-    <string name="welcome_headline">Take a gander at any file.</string>
+    <string name="welcome_headline">Open anything.</string>
     <!-- The strongest sentence in the product, which used to be a clause in the middle of
          main_subtitle. The second half is checkable: the About dialog reads the permission
          list back out of Android rather than asserting it. -->
-    <string name="welcome_promise">Nothing is uploaded. Gander has no internet permission.</string>
+    <string name="welcome_promise">Everything stays on your device. No internet permission.</string>
     <!-- Spoken form of the badge grid. The tiles themselves are not important for
          accessibility, so this is the whole announcement and it is one stop rather than
          nine, the same way a file row carries the description for its own four views. It
