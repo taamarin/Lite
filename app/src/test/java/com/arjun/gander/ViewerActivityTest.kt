@@ -10,6 +10,7 @@ import android.os.Looper
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
@@ -120,6 +121,20 @@ class ViewerActivityTest {
         val url = open("six-pages.pdf").loadedUrl()
         assertThat(url).startsWith("https://appassets.androidplatform.net/assets/viewer/pdf.html")
         assertThat(url).contains("ext=pdf")
+    }
+
+    @Test
+    fun openingAPresentationUsesTheGoogleColoredCircularSpinner() {
+        val spinner = open("deck.pptx").get()
+            .findViewById<CircularProgressIndicator>(R.id.loadingProgress)
+
+        assertThat(spinner).isNotNull()
+        assertThat(spinner.indicatorColor.toList()).containsExactly(
+            0xFF4285F4.toInt(),
+            0xFFEA4335.toInt(),
+            0xFFFBBC05.toInt(),
+            0xFF34A853.toInt(),
+        ).inOrder()
     }
 
     @Test
