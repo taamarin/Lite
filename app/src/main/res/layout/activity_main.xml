@@ -118,26 +118,19 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="@string/welcome_headline"
-                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+                    android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                    android:textStyle="bold" />
 
-                <!-- Filled by MainActivity from WELCOME_BADGES, not declared nine times
-                     here, so adding a kind is one line in one place and the grid can
-                     never disagree with the badges on the rows.
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/welcome_promise"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-                     The column count is a resource rather than a measurement. Three across
-                     needs 268dp including this layout's padding, and the narrowest phone
-                     has 320dp to give, so it fits everywhere in either orientation.
-
-                     A values-land override putting all nine on one row was tried and
-                     dropped: it needs 676dp, which a 411x731dp emulator has and a 720p
-                     xhdpi phone (360x640dp) does not, so the last tiles were clipped on
-                     one of the commonest geometries there is. In phone landscape the block
-                     scrolls instead, which is what the ScrollView is for. If it is worth
-                     revisiting, shrink the tiles for that qualifier rather than adding
-                     columns, and check the arithmetic against 533dp before 731dp. -->
-                <!-- Note for a future qualifier: smallestWidth outranks orientation in the
-                     resource table, so values-sw600dp beats a values-land on a landscape
-                     tablet, and resolution is per resource name rather than per folder. -->
                 <GridLayout
                     android:id="@+id/formatGrid"
                     android:layout_width="wrap_content"
@@ -145,16 +138,6 @@
                     android:layout_marginTop="28dp"
                     android:columnCount="@integer/welcome_grid_columns"
                     android:focusable="true" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="28dp"
-                    android:gravity="center"
-                    android:lineSpacingExtra="2dp"
-                    android:text="@string/welcome_promise"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <!-- The two ways a file reaches Gander, in priority order. Both call the
                      launchers the FAB and the old Add row already used; there is no third
