@@ -79,15 +79,17 @@
             android:src="@drawable/ic_close" />
     </LinearLayout>
 
-    <!-- Google indeterminate loading bar shown while opening or rendering files -->
-    <com.google.android.material.progressindicator.LinearProgressIndicator
+    <!-- Google-colored spinner shown while opening files -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/loadingProgress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
         android:indeterminate="true"
         android:visibility="gone"
         app:indicatorColor="@array/google_colors"
-        app:trackCornerRadius="0dp" />
+        app:indicatorSize="32dp"
+        app:trackThickness="3dp" />
 
     <!-- Sits between the toolbar and the document so a long save reports itself
          without covering what is being read. Gone unless a copy is running. -->
