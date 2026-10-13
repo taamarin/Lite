@@ -18,7 +18,15 @@ import androidx.recyclerview.widget.RecyclerView
  * on the phone, down to what TalkBack says about each row.
  */
 internal sealed interface Row {
-    data class Header(val title: String) : Row
+    data class Header(
+        val title: String,
+        val actionText: String? = null,
+        val onAction: (() -> Unit)? = null,
+        val deleteText: String? = null,
+        val onDelete: (() -> Unit)? = null,
+        val secondaryText: String? = null,
+        val onSecondaryAction: (() -> Unit)? = null
+    ) : Row
     data class Hint(val text: String) : Row
     data class Item(
         val badge: String,
@@ -32,7 +40,11 @@ internal sealed interface Row {
          */
         val onRemove: ((kept: () -> Unit) -> Unit)? = null,
         val thumbUri: Uri? = null,
-        val thumbExt: String = ""
+        val thumbExt: String = "",
+        val selectable: Boolean = false,
+        val isSelected: Boolean = false,
+        val onToggleSelect: (() -> Unit)? = null,
+        val onLongClick: (() -> Unit)? = null
     ) : Row
 }
 
@@ -85,8 +97,27 @@ internal class RowAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = rows[position]) {
-            is Row.Header ->
+            is Row.Header -> {
                 holder.itemView.findViewById<TextView>(R.id.headerText).text = row.title
+                val actionBtn = holder.itemView.findViewById<TextView>(R.id.headerAction)
+                val deleteBtn = holder.itemView.findViewById<TextView>(R.id.headerDeleteAction)
+                val secBtn = holder.itemView.findViewById<TextView>(R.id.headerSecondaryAction)
+                if (actionBtn != null) {
+                    actionBtn.text = row.actionText
+                    actionBtn.visibility = if (row.actionText != null) View.VISIBLE else View.GONE
+                    actionBtn.setOnClickListener { row.onAction?.invoke() }
+                }
+                if (deleteBtn != null) {
+                    deleteBtn.text = row.deleteText
+                    deleteBtn.visibility = if (row.deleteText != null) View.VISIBLE else View.GONE
+                    deleteBtn.setOnClickListener { row.onDelete?.invoke() }
+                }
+                if (secBtn != null) {
+                    secBtn.text = row.secondaryText
+                    secBtn.visibility = if (row.secondaryText != null) View.VISIBLE else View.GONE
+                    secBtn.setOnClickListener { row.onSecondaryAction?.invoke() }
+                }
+            }
             is Row.Hint ->
                 holder.itemView.findViewById<TextView>(R.id.hintText).text = row.text
             is Row.Item -> {
@@ -107,12 +138,31 @@ internal class RowAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 val sub = holder.itemView.findViewById<TextView>(R.id.subtitle)
                 sub.text = row.subtitle
                 sub.visibility = if (row.subtitle == null) View.GONE else View.VISIBLE
+
+                val checkbox = holder.itemView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.checkbox)
+                if (checkbox != null) {
+                    checkbox.visibility = if (row.selectable) View.VISIBLE else View.GONE
+                    checkbox.isChecked = row.isSelected
+                }
+
                 // The row children are not-important for accessibility, so this is
                 // the whole announcement. Keeping the badge in it matters: the badge
                 // is hidden once a thumbnail loads, and the file type would go with it
                 holder.itemView.contentDescription =
                     listOfNotNull(row.title, row.badge, row.subtitle).joinToString(", ")
-                holder.itemView.setOnClickListener { row.onClick() }
+                holder.itemView.setOnClickListener {
+                    if (row.selectable && row.onToggleSelect != null) {
+                        row.onToggleSelect.invoke()
+                    } else {
+                        row.onClick()
+                    }
+                }
+                holder.itemView.setOnLongClickListener(if (row.onLongClick != null) {
+                    View.OnLongClickListener {
+                        row.onLongClick.invoke()
+                        true
+                    }
+                } else null)
                 // A swipe is how a row is removed, and nothing on screen says so, nor can a
                 // screen reader make one. So TalkBack is offered Remove among the row's
                 // actions, as dismiss, the action a view that can be swiped away has, and

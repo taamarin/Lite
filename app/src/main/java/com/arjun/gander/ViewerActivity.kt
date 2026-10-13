@@ -323,6 +323,14 @@ open class ViewerActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { finish() }
         val container = findViewById<FrameLayout>(R.id.container)
 
+        val loadingBar = findViewById<LinearProgressIndicator>(R.id.loadingProgress)
+        loadingBar?.setIndicatorColor(
+            0xFF4285F4.toInt(),
+            0xFFEA4335.toInt(),
+            0xFFFBBC05.toInt(),
+            0xFF34A853.toInt()
+        )
+
         // Files arrive via VIEW (data), the share sheet (EXTRA_STREAM), a plain path extra
         // from Gander itself, or as shared text (EXTRA_TEXT). Who sent them decides which
         // of those may be opened: see INTERNAL_VIEWER.
@@ -1391,6 +1399,7 @@ open class ViewerActivity : AppCompatActivity() {
      */
     private fun showPicture(container: FrameLayout, uri: Uri, name: String, ext: String) {
         if (ext != "webp" && ext != "png") return showImage(container, uri, name, ext)
+        findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.VISIBLE
         val app = applicationContext
         val main = Handler(Looper.getMainLooper())
         val worker = documentLoader ?: Executors.newSingleThreadExecutor()
@@ -1407,6 +1416,7 @@ open class ViewerActivity : AppCompatActivity() {
     }
 
     private fun showImage(container: FrameLayout, uri: Uri, name: String, ext: String) {
+        findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.GONE
         val imageView = SubsamplingScaleImageView(this)
         imageView.contentDescription = name
         imageView.setBackgroundColor(Color.BLACK)
@@ -1593,6 +1603,7 @@ open class ViewerActivity : AppCompatActivity() {
 
     /** A zip, listed rather than drawn. See [ArchiveBrowser]. */
     private fun showArchive(container: FrameLayout, uri: Uri, name: String, state: Bundle?) {
+        findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.GONE
         val browser = ArchiveBrowser(
             activity = this,
             toolbar = findViewById(R.id.toolbar),
@@ -1612,6 +1623,7 @@ open class ViewerActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     private fun showWeb(container: FrameLayout, uri: Uri, kind: FileKind, name: String, ext: String) {
+        findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.VISIBLE
         val web = ScrollProbeWebView(this)
         webView = web
         pageSearches = canPortSearch() &&
@@ -1682,6 +1694,7 @@ open class ViewerActivity : AppCompatActivity() {
 
         web.webViewClient = object : WebViewClientCompat() {
             override fun onPageFinished(view: WebView, url: String) {
+                findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.GONE
                 // The viewers that search from inside the page need a way to answer, and a
                 // paged document a way to report its pages and hear night mode
                 if (pageGetsChannel(kind)) openSearchChannel(view, kind)
@@ -1845,6 +1858,7 @@ open class ViewerActivity : AppCompatActivity() {
         pageFader.hideNow()
         fastScrollEnabled = false
         hideFastScrollNow()
+        findViewById<LinearProgressIndicator>(R.id.loadingProgress)?.visibility = View.GONE
         // Night mode goes with the search item: the channel both of them speak over is
         // closed two lines down, so leaving either on screen offers a control that does
         // nothing, and night mode would go on rewriting the stored preference at a port

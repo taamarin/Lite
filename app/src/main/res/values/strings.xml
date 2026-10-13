@@ -181,4 +181,18 @@
     <string name="filter_txt">Text and code</string>
     <string name="filter_model">3D models</string>
     <string name="filter_archive">Archives</string>
+
+    <!-- Selection, batch delete for recents, and home file types -->
+    <string name="cancel">Cancel</string>
+    <string name="select">Select</string>
+    <string name="select_all">Select all</string>
+    <string name="deselect_all">Deselect all</string>
+    <string name="delete">Delete</string>
+    <string name="delete_selected">Delete (%1$d)</string>
+    <string name="remove_selected_recent_title">Remove from recent files?</string>
+    <string name="remove_selected_recent_message">Remove %1$d selected file(s) from recent files? The files stay on your device.</string>
+    <string name="filter_all">All</string>
+    <string name="chip_word">Word</string>
+    <string name="chip_excel">Excel</string>
+    <string name="chip_ppt">PowerPoint</string>
 </resources>

@@ -167,6 +167,39 @@ body {
   from, to { visibility: hidden; }
 }
 
+/*
+ * Google-style circular loading spinner while a document is loading or rendering.
+ * Cycles through Google's four colors: blue (#4285F4), red (#EA4335), yellow (#FBBC05), green (#34A853).
+ */
+.vw-status:not(.vw-error):not(.vw-ask)::before {
+  content: "";
+  display: block;
+  width: 28px;
+  width: calc(28px * var(--vw-zoom));
+  height: 28px;
+  height: calc(28px * var(--vw-zoom));
+  margin: 0 auto 10px;
+  margin: 0 auto calc(10px * var(--vw-zoom));
+  border-radius: 50%;
+  border: 3.5px solid rgba(0, 0, 0, 0.1);
+  border-width: calc(3.5px * var(--vw-zoom));
+  border-top-color: #4285F4;
+  animation: vw-google-spin 1s linear infinite, vw-google-colors 4s linear infinite;
+  box-sizing: border-box;
+}
+
+@keyframes vw-google-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes vw-google-colors {
+  0%, 100% { border-top-color: #4285F4; }
+  25% { border-top-color: #EA4335; }
+  50% { border-top-color: #FBBC05; }
+  75% { border-top-color: #34A853; }
+}
+
 .vw-error {
   background: #fdecea;
   background: var(--vw-error);

@@ -75,4 +75,17 @@
     <!-- Unchanged: the icon and the app it opens are one family already, and
          retouching it means regenerating two baked PNGs that are not in this repo. -->
     <color name="ic_launcher_background">#F6F1E6</color>
+
+    <!-- Google loading animation 4 colors -->
+    <color name="google_blue">#4285F4</color>
+    <color name="google_red">#EA4335</color>
+    <color name="google_yellow">#FBBC05</color>
+    <color name="google_green">#34A853</color>
+
+    <array name="google_colors">
+        <item>@color/google_blue</item>
+        <item>@color/google_red</item>
+        <item>@color/google_yellow</item>
+        <item>@color/google_green</item>
+    </array>
 </resources>

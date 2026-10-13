@@ -74,7 +74,29 @@
             android:layout_height="wrap_content"
             android:indeterminate="true"
             android:visibility="gone"
+            app:indicatorColor="@array/google_colors"
             app:trackCornerRadius="0dp" />
+
+        <HorizontalScrollView
+            android:id="@+id/typeFilterScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:clipToPadding="false"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/typeFilterGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:singleSelection="true"
+                app:selectionRequired="true" />
+        </HorizontalScrollView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/list"
