@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Gander</string>
+    <string name="app_name">Office Lite</string>
     <!-- The long form, kept for the About dialog, which is where someone who wants the
          detail goes looking. The first run gets welcome_headline instead. -->
     <string name="main_subtitle">Open and view documents, spreadsheets, slides and photos. Everything renders on your phone, nothing is uploaded.</string>
@@ -20,21 +20,21 @@
     <string name="folders">Folders</string>
     <string name="add_folder">Add a folder</string>
     <string name="no_recents_hint">Files you open appear here for quick access.</string>
-    <string name="no_folders_hint">Grant a folder to browse its files right here. Gander needs no storage permission to do it.</string>
+    <string name="no_folders_hint">Grant a folder to browse its files right here. Office Lite needs no storage permission to do it.</string>
     <string name="empty_folder">Nothing to show in this folder.</string>
     <!-- What the list of a .zip says in place of its contents. The second is a zip handed
          over as a stream rather than a file, which has to be read from the start and so
          cannot be looked inside; a saved copy is a file. -->
-    <string name="archive_unreadable">Gander can\'t read this zip. It may be damaged, or not a zip at all.</string>
-    <string name="archive_not_seekable">Gander can\'t look inside this zip from where it is. Save a copy from the menu and open that instead.</string>
-    <string name="archive_too_large">This zip holds more files than Gander can list.</string>
+    <string name="archive_unreadable">Office Lite can\'t read this zip. It may be damaged, or not a zip at all.</string>
+    <string name="archive_not_seekable">Office Lite can\'t look inside this zip from where it is. Save a copy from the menu and open that instead.</string>
+    <string name="archive_too_large">This zip holds more files than Office Lite can list.</string>
     <!-- Beside a file in a zip that is listed and cannot be opened, and what tapping it says.
          A password-protected file opens with its password, and says why when it cannot: it is
          locked with PKWARE's Strong Encryption, which next to nothing writes. -->
     <string name="entry_locked">Password protected</string>
-    <string name="entry_locked_unsupported">This file is locked in a way Gander can\'t unlock</string>
-    <string name="entry_unsupported">Packed in a format Gander can\'t unpack</string>
-    <string name="entry_unsupported_open">This file is packed in a way Gander can\'t read</string>
+    <string name="entry_locked_unsupported">This file is locked in a way Office Lite can\'t unlock</string>
+    <string name="entry_unsupported">Packed in a format Office Lite can\'t unpack</string>
+    <string name="entry_unsupported_open">This file is packed in a way Office Lite can\'t read</string>
     <!-- Asking for a file's password, in the words the PDF viewer asks for a PDF's -->
     <string name="password_title">This file is password protected</string>
     <string name="password_message">Enter its password to open it.</string>
@@ -71,9 +71,9 @@
          again. Hence a question first and an Undo after, issue #39. The row is swiped away
          over a bin, so each question says the thing itself stays where it is. -->
     <string name="remove_recent_title">Remove from recent files?</string>
-    <string name="remove_recent_message">%1$s stays where it is, but Gander will lose access to it. Opening it again means finding it in the system picker.</string>
+    <string name="remove_recent_message">%1$s stays where it is, but Office Lite will lose access to it. Opening it again means finding it in the system picker.</string>
     <string name="remove_folder_title">Remove folder?</string>
-    <string name="remove_folder_message">Nothing in %1$s is deleted, but Gander will lose access to it. Granting it back means finding it in the system picker again.</string>
+    <string name="remove_folder_message">Nothing in %1$s is deleted, but Office Lite will lose access to it. Granting it back means finding it in the system picker again.</string>
     <!-- Also the TalkBack label for removing a row, which the swipe does -->
     <string name="remove">Remove</string>
     <string name="search_in_document">Search in document</string>
@@ -109,10 +109,10 @@
     <!-- The one kind of notification Gander posts, named in the phone's settings for the app:
          play and pause on the lock screen while a track plays on with the screen off -->
     <string name="audio_controls_channel">Audio controls</string>
-    <string name="open_with_hint">Tip: in your file manager, tap any file and choose Open with &gt; Gander.</string>
+    <string name="open_with_hint">Tip: in your file manager, tap any file and choose Open with &gt; Office Lite.</string>
     <string name="back">Back</string>
-    <string name="about_gander">About Gander</string>
-    <!-- The two home menu items above About Gander. That one already names the app, so
+    <string name="about_gander">About Office Lite</string>
+    <!-- The two home menu items above About Office Lite. That one already names the app, so
          these stay short and start with a verb. Rate appears where Google Play installed
          the copy, and Switch to Google Play takes its place anywhere else. -->
     <string name="rate_app">Rate</string>
@@ -120,13 +120,13 @@
     <string name="share_app">Share</string>
     <!-- What Share hands over. The link is the site rather than the Play listing, so it
          works for whoever receives it, however they install. -->
-    <string name="share_app_text">Gander, an offline file viewer for Android: %1$s</string>
+    <string name="share_app_text">Office Lite, an offline file viewer for Android: %1$s</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_permissions_label">Permissions this app requests</string>
     <string name="about_permissions_none">None</string>
     <!-- Sits under the permission line, which Gander reads back from Android at
          runtime rather than asserting for itself -->
-    <string name="about_permissions_detail">Asked of Android just now, not written here in advance. Gander has no internet permission either, so it cannot send your files anywhere.</string>
+    <string name="about_permissions_detail">Asked of Android just now, not written here in advance. Office Lite has no internet permission either, so it cannot send your files anywhere.</string>
     <string name="about_made_by">Made by Arjun Maniyani</string>
     <string name="about_made_by_url" translatable="false">arjun.maniyani.com</string>
     <string name="about_source">Source code</string>
