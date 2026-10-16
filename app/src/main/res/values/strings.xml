@@ -195,4 +195,12 @@
     <string name="chip_word">Word</string>
     <string name="chip_excel">Excel</string>
     <string name="chip_ppt">PowerPoint</string>
+    <string name="navigation_home">Home</string>
+    <string name="navigation_library">Library</string>
+    <string name="library_title">Your library</string>
+    <string name="library_subtitle">Browse your recent files by category.</string>
+    <plurals name="library_file_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
 </resources>

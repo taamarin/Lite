@@ -1,6 +1,7 @@
 package com.arjun.gander
 
 import android.app.Application
+import com.google.android.material.color.DynamicColors
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewOutcomeReceiver
 import androidx.webkit.WebViewStartUpConfig
@@ -19,6 +20,7 @@ class GanderApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        DynamicColors.applyToActivitiesIfAvailable(this)
         // A throwaway daemon thread rather than a pool: this runs once per process.
         val warmUpThread = Executor { r ->
             Thread(r, "webview-warmup").apply { isDaemon = true }.start()

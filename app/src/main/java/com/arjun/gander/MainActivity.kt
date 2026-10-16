@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +30,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -54,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private val stack = ArrayDeque<Crumb>()
     private val activeFilters = mutableSetOf<String>()
     private var homeFilterType: String? = null
+    private var isLibrarySelected = false
     private var isRecentsSelectionMode = false
     private val selectedRecentUris = mutableSetOf<String>()
     private val adapter = RowAdapter()
@@ -64,6 +68,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var typeFilterGroup: com.google.android.material.chip.ChipGroup
     private lateinit var list: RecyclerView
     private lateinit var welcome: View
+    private lateinit var library: View
+    private lateinit var libraryCategories: ViewGroup
+    private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var fab: ExtendedFloatingActionButton
 
     /**
@@ -119,6 +126,14 @@ class MainActivity : AppCompatActivity() {
             if (isRecentsSelectionMode) {
                 isRecentsSelectionMode = false
                 selectedRecentUris.clear()
+                render()
+                return
+            }
+            if (isLibrarySelected) {
+                isLibrarySelected = false
+                homeFilterType = null
+                bottomNavigation.selectedItemId = R.id.navigation_home
+                setupHomeFilterChips()
                 render()
                 return
             }
@@ -207,6 +222,10 @@ class MainActivity : AppCompatActivity() {
         // change while it is running, and the block itself is shown or hidden, not rebuilt.
         welcome = findViewById(R.id.welcome)
         fillFormatGrid(findViewById(R.id.formatGrid))
+        library = findViewById(R.id.library)
+        libraryCategories = findViewById(R.id.libraryCategories)
+        bottomNavigation = findViewById(R.id.bottomNavigation)
+        setupLibraryCategories()
 
         // Three controls, two destinations. The FAB and the welcome block's filled button
         // are the same action seen in two states of the screen, and the outlined button is
@@ -222,7 +241,72 @@ class MainActivity : AppCompatActivity() {
         typeFilterScroll = findViewById(R.id.typeFilterScroll)
         typeFilterGroup = findViewById(R.id.typeFilterGroup)
         setupHomeFilterChips()
+        bottomNavigation.selectedItemId =
+            if (isLibrarySelected) R.id.navigation_library else R.id.navigation_home
+        bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navigation_home -> {
+                    if (isLibrarySelected) homeFilterType = null
+                    isLibrarySelected = false
+                    setupHomeFilterChips()
+                    render()
+                    true
+                }
+                R.id.navigation_library -> {
+                    isLibrarySelected = true
+                    render()
+                    true
+                }
+                else -> false
+            }
+        }
+        bottomNavigation.setOnItemReselectedListener { item ->
+            if (item.itemId == R.id.navigation_home) {
+                homeFilterType = null
+                setupHomeFilterChips()
+                render()
+            }
+        }
         onBackPressedDispatcher.addCallback(this, backCallback)
+    }
+
+    private fun setupLibraryCategories() {
+        libraryCategories.removeAllViews()
+        SUPPORTED_FILTER_TYPES.forEach { item ->
+            val card = layoutInflater.inflate(
+                R.layout.view_library_category, libraryCategories, false
+            ) as MaterialCardView
+            val label = getString(item.labelRes)
+            card.findViewById<TextView>(R.id.categoryBadge).apply {
+                text = item.badge
+                background = GradientDrawable().apply {
+                    setColor(item.color)
+                    cornerRadius = 14f * resources.displayMetrics.density
+                }
+            }
+            card.findViewById<TextView>(R.id.categoryName).text = label
+            card.setOnClickListener {
+                isLibrarySelected = false
+                homeFilterType = item.badge
+                isRecentsSelectionMode = false
+                selectedRecentUris.clear()
+                setupHomeFilterChips()
+                bottomNavigation.selectedItemId = R.id.navigation_home
+                render()
+            }
+            libraryCategories.addView(card)
+        }
+        updateLibraryCategoryCounts()
+    }
+
+    private fun updateLibraryCategoryCounts() {
+        val counts = Recents.all(this).groupingBy { badgeFor(it.name, null).first }.eachCount()
+        SUPPORTED_FILTER_TYPES.forEachIndexed { index, item ->
+            val count = counts[item.badge] ?: 0
+            libraryCategories.getChildAt(index)
+                .findViewById<TextView>(R.id.categoryCount).text =
+                resources.getQuantityString(R.plurals.library_file_count, count, count)
+        }
     }
 
     private fun setupHomeFilterChips() {
@@ -288,15 +372,16 @@ class MainActivity : AppCompatActivity() {
         outState.putStringArrayList(STATE_LABELS, ArrayList(stack.map { it.label }))
         outState.putStringArrayList(STATE_ACTIVE_FILTERS, ArrayList(activeFilters))
         outState.putString(STATE_HOME_FILTER_TYPE, homeFilterType)
+        outState.putBoolean(STATE_LIBRARY_SELECTED, isLibrarySelected)
         outState.putBoolean(STATE_RECENTS_SELECTION_MODE, isRecentsSelectionMode)
         outState.putStringArrayList(STATE_SELECTED_RECENTS, ArrayList(selectedRecentUris))
     }
 
     private fun restoreFilters(state: Bundle?) {
-        val saved = state?.getStringArrayList(STATE_ACTIVE_FILTERS) ?: return
         activeFilters.clear()
-        activeFilters.addAll(saved)
+        activeFilters.addAll(state?.getStringArrayList(STATE_ACTIVE_FILTERS).orEmpty())
         homeFilterType = state?.getString(STATE_HOME_FILTER_TYPE)
+        isLibrarySelected = state?.getBoolean(STATE_LIBRARY_SELECTED, false) ?: false
         isRecentsSelectionMode = state?.getBoolean(STATE_RECENTS_SELECTION_MODE, false) ?: false
         val selected = state?.getStringArrayList(STATE_SELECTED_RECENTS)
         if (selected != null) {
@@ -515,7 +600,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun render() {
         val here = stack.lastOrNull()
-        backCallback.isEnabled = here != null || isRecentsSelectionMode
+        backCallback.isEnabled = here != null || isRecentsSelectionMode || isLibrarySelected
         // At the root the wordmark is the title, centred; inside a folder the title is the
         // folder's name, where Android puts it, beside the back arrow. A mark is an identity
         // and a folder name is a location, so these are two kinds of content sharing a slot
@@ -576,10 +661,26 @@ class MainActivity : AppCompatActivity() {
                 progress.visibility = View.GONE
                 // Inside the token guard, so a slow load that finishes after the reader has
                 // moved on cannot put the welcome block back over a folder they are in.
-                welcome.visibility = if (screen.welcome) View.VISIBLE else View.GONE
-                list.visibility = if (screen.welcome) View.GONE else View.VISIBLE
-                typeFilterScroll.visibility = if (here == null && !screen.welcome) View.VISIBLE else View.GONE
-                if (screen.welcome) fab.hide() else fab.show()
+                val showLibrary = here == null && isLibrarySelected
+                welcome.visibility =
+                    if (screen.welcome && !showLibrary) View.VISIBLE else View.GONE
+                list.visibility =
+                    if (!screen.welcome && !showLibrary) View.VISIBLE else View.GONE
+                library.visibility = if (showLibrary) View.VISIBLE else View.GONE
+                typeFilterScroll.visibility =
+                    if (here == null && !screen.welcome && !showLibrary) View.VISIBLE else View.GONE
+                bottomNavigation.visibility = if (here == null) View.VISIBLE else View.GONE
+                updateLibraryCategoryCounts()
+                if (screen.welcome || showLibrary) {
+                    fab.hide()
+                } else {
+                    (fab.layoutParams as? android.widget.FrameLayout.LayoutParams)?.let { params ->
+                        params.bottomMargin = ((if (here == null) 96 else 20) *
+                            resources.displayMetrics.density).toInt()
+                        fab.layoutParams = params
+                    }
+                    fab.show()
+                }
                 adapter.submit(screen.rows)
             }
         }
@@ -1080,6 +1181,7 @@ class MainActivity : AppCompatActivity() {
         const val STATE_LABELS = "stack.labels"
         const val STATE_ACTIVE_FILTERS = "active_filters"
         const val STATE_HOME_FILTER_TYPE = "home_filter_type"
+        const val STATE_LIBRARY_SELECTED = "library_selected"
         const val STATE_RECENTS_SELECTION_MODE = "recents_selection_mode"
         const val STATE_SELECTED_RECENTS = "selected_recents"
     }
