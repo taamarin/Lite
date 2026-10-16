@@ -45,6 +45,7 @@
   }
   #sheet { padding: 8px; overflow: auto; }
   #sheet table { border-collapse: collapse; font-size: 13px; }
+  #sheet img.vw-pic { display: block; max-width: 90vw; height: auto; }
   #sheet td, #sheet th {
     border: 1px solid #CFC5B2;
     padding: 4px 8px;
@@ -72,6 +73,7 @@
   }
 </style>
 <script src="lib/xlsx.full.min.js"></script>
+<script src="lib/jszip3.min.js"></script>
 </head>
 <body>
 <div id="vw-status" class="vw-status vw-wait">Loading spreadsheet…</div>

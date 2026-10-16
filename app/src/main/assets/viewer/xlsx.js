@@ -116,6 +116,7 @@ Sheet.prototype.table = function (k) {
   }
   t.innerHTML = cols + this.rowsHtml(piece.s, piece.e);
   vwDisarmLinks(t);
+  this.addImages(t, piece);
   piece.table = t;
   return t;
 };
@@ -152,13 +153,173 @@ function columnWidths(table, cols) {
   return widths;
 }
 
+/*
+ * The pictures of a workbook, for SheetJS reads none: a list for each sheet, in the order of the
+ * workbook's sheets, of { row, col, src, w, h } where row and col are the cell a picture is
+ * anchored at, src a blob URL and w, h its size in CSS px where the file states one. Whatever
+ * cannot be read is left out, and a workbook that is not a zip, or whose pictures cannot be
+ * read at all, has none.
+ */
+function kids(node, name) {
+  var out = [];
+  for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
+    if (n.localName === name) out.push(n);
+  }
+  return out;
+}
+
+function parseXml(text) {
+  return new DOMParser().parseFromString(text, "application/xml");
+}
+
+function resolvePath(base, target) {
+  if (target.charAt(0) === "/") return target.slice(1);
+  var parts = base.split("/");
+  parts.pop();
+  target.split("/").forEach(function (p) {
+    if (p === "..") parts.pop();
+    else if (p !== ".") parts.push(p);
+  });
+  return parts.join("/");
+}
+
+function relsOf(zip, part) {
+  var slash = part.lastIndexOf("/");
+  var f = zip.file(part.slice(0, slash + 1) + "_rels/" + part.slice(slash + 1) + ".rels");
+  if (!f) return Promise.resolve({});
+  return f.async("string").then(function (xml) {
+    var map = {};
+    Array.prototype.forEach.call(parseXml(xml).getElementsByTagName("Relationship"), function (r) {
+      map[r.getAttribute("Id")] = { type: r.getAttribute("Type") || "", path: resolvePath(part, r.getAttribute("Target") || "") };
+    });
+    return map;
+  });
+}
+
+var IMAGE_TYPES = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", bmp: "image/bmp", webp: "image/webp", svg: "image/svg+xml" };
+
+function drawingImages(zip, drawing, urls) {
+  var f = zip.file(drawing);
+  if (!f) return Promise.resolve([]);
+  return Promise.all([f.async("string"), relsOf(zip, drawing)]).then(function (res) {
+    var doc = parseXml(res[0]);
+    var rels = res[1];
+    var jobs = [];
+    Array.prototype.forEach.call(doc.documentElement.children, function (anchor) {
+      var blip = anchor.getElementsByTagName("*");
+      var embed = null;
+      for (var i = 0; i < blip.length && !embed; i++) {
+        if (blip[i].localName === "blip") {
+          embed = blip[i].getAttribute("r:embed") ||
+            blip[i].getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "embed");
+        }
+      }
+      var rel = embed && rels[embed];
+      if (!rel) return;
+      var from = kids(anchor, "from")[0];
+      var row = 0;
+      var col = 0;
+      if (from) {
+        var c = kids(from, "col")[0];
+        var r = kids(from, "row")[0];
+        col = c ? parseInt(c.textContent, 10) || 0 : 0;
+        row = r ? parseInt(r.textContent, 10) || 0 : 0;
+      }
+      var ext = kids(anchor, "ext")[0];
+      var w = ext ? Math.round((parseInt(ext.getAttribute("cx"), 10) || 0) / 9525) : 0;
+      var h = ext ? Math.round((parseInt(ext.getAttribute("cy"), 10) || 0) / 9525) : 0;
+      jobs.push(
+        urlFor(zip, rel.path, urls).then(function (src) {
+          return src ? { row: row, col: col, src: src, w: w, h: h } : null;
+        })
+      );
+    });
+    return Promise.all(jobs);
+  });
+}
+
+function urlFor(zip, path, urls) {
+  if (urls[path]) return urls[path];
+  var f = zip.file(path);
+  var type = IMAGE_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()];
+  urls[path] = f && type
+    ? f.async("uint8array").then(function (data) {
+        return URL.createObjectURL(new Blob([data], { type: type }));
+      })
+    : Promise.resolve(null);
+  return urls[path];
+}
+
+function workbookImages(bytes, names) {
+  var none = names.map(function () { return []; });
+  if (!window.JSZip || bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return Promise.resolve(none);
+  return JSZip.loadAsync(bytes).then(function (zip) {
+    var book = zip.file("xl/workbook.xml");
+    if (!book) return none;
+    var urls = {};
+    return Promise.all([book.async("string"), relsOf(zip, "xl/workbook.xml")]).then(function (res) {
+      var sheetEls = Array.prototype.filter.call(parseXml(res[0]).getElementsByTagName("*"), function (e) {
+        return e.localName === "sheet";
+      });
+      return Promise.all(
+        names.map(function (name) {
+          var el = sheetEls.filter(function (e) { return e.getAttribute("name") === name; })[0];
+          var id = el && (el.getAttribute("r:id") ||
+            el.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+          var rel = id && res[1][id];
+          if (!rel) return [];
+          return relsOf(zip, rel.path).then(function (sr) {
+            var drawings = Object.keys(sr).filter(function (k) { return /\/drawing$/.test(sr[k].type); });
+            return Promise.all(drawings.map(function (k) { return drawingImages(zip, sr[k].path, urls); })).then(function (lists) {
+              return [].concat.apply([], lists).filter(Boolean);
+            });
+          });
+        })
+      );
+    });
+  }).catch(function () { return none; });
+}
+
+/* Each picture goes into the cell it is anchored at; one whose cell is not drawn is put below the rows */
+Sheet.prototype.addImages = function (t, piece) {
+  var imgs = this.images || [];
+  var lastPiece = piece === this.pieces[this.pieces.length - 1];
+  imgs.forEach(function (im) {
+    var inPiece = im.row >= piece.s && im.row <= piece.e;
+    var cell = inPiece ? t.querySelector("#sjs-" + XLSX.utils.encode_cell({ r: im.row, c: im.col })) : null;
+    if (!cell && !(lastPiece && im.row > piece.e) && !(inPiece && !cell)) return;
+    var img = document.createElement("img");
+    img.className = "vw-pic";
+    img.src = im.src;
+    img.alt = "";
+    if (im.w > 0) img.style.width = im.w + "px";
+    if (cell) {
+      cell.appendChild(img);
+    } else {
+      var row = t.insertRow(-1);
+      var td = row.insertCell(-1);
+      td.colSpan = Math.max(1, t.rows[0] ? t.rows[0].cells.length : 1);
+      td.appendChild(img);
+    }
+  });
+};
+
 vwFetchDoc("buffer")
   .then(function (buf) {
-    var wb = readWorkbook(new Uint8Array(buf));
+    var bytes = new Uint8Array(buf);
+    var wb = readWorkbook(bytes);
+    return workbookImages(bytes, wb.SheetNames).then(function (images) { return { wb: wb, images: images }; });
+  })
+  .then(function (loaded) {
+    var wb = loaded.wb;
     if (!wb.SheetNames.length) throw new Error("The workbook has no sheets");
     var tabs = document.getElementById("tabs");
     var sheetDiv = document.getElementById("sheet");
-    var sheets = wb.SheetNames.map(function (sn) { return new Sheet(wb.Sheets[sn]); });
+    var sheets = wb.SheetNames.map(function (sn, i) {
+      var sheet = new Sheet(wb.Sheets[sn]);
+      sheet.images = loaded.images[i];
+      return sheet;
+    });
     var current = 0;
 
     /* Every column of the sheet on the page at the widths its pieces share */
