@@ -885,31 +885,39 @@ class MainActivityTest {
     }
 
     // ---------------------------------------------------------------
-    // Home file type chips and recents batch selection
+    // Library categories and recents batch selection
     // ---------------------------------------------------------------
 
     @Test
-    fun homeFileTypeFilterShowsWhenRecentsExist() {
+    fun homeDoesNotShowCategoryChipsWhenRecentsExist() {
         granted("six-pages.pdf", "sample.pdf")
         val controller = home()
-        val filterScroll = controller.get().findViewById<View>(R.id.typeFilterScroll)
-        assertThat(filterScroll.visibility).isEqualTo(View.VISIBLE)
+        val views = mutableListOf<View>()
+        fun collect(view: View) {
+            views += view
+            if (view is ViewGroup) {
+                for (index in 0 until view.childCount) collect(view.getChildAt(index))
+            }
+        }
+        collect(controller.get().findViewById(R.id.root))
+
+        assertThat(views.filterIsInstance<com.google.android.material.chip.ChipGroup>()).isEmpty()
     }
 
     @Test
-    fun homeFileTypeFilterFiltersRecentFiles() {
+    fun libraryCategoryFiltersRecentFiles() {
         granted("six-pages.pdf", "sample.pdf")
-        granted("six-pages.pdf", "notes.txt")
+        granted("plain.txt", "notes.txt")
         val controller = home()
         val titlesBefore = controller.rowTitles()
         assertThat(titlesBefore).contains("sample.pdf")
         assertThat(titlesBefore).contains("notes.txt")
 
-        val chipGroup = controller.get().findViewById<com.google.android.material.chip.ChipGroup>(R.id.typeFilterGroup)
-        val pdfChip = (0 until chipGroup.childCount)
-            .map { chipGroup.getChildAt(it) as com.google.android.material.chip.Chip }
-            .first { it.tag == "PDF" }
-        pdfChip.performClick()
+        controller.get().findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.navigation_library
+        shadowOf(context.mainLooper).idle()
+        controller.get().findViewById<ViewGroup>(R.id.libraryCategories).getChildAt(0)
+            .performClick()
         shadowOf(context.mainLooper).idle()
 
         val titlesAfter = controller.rowTitles()

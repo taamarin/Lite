@@ -64,8 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toolbar: MaterialToolbar
     private lateinit var lockup: View
     private lateinit var progress: LinearProgressIndicator
-    private lateinit var typeFilterScroll: View
-    private lateinit var typeFilterGroup: com.google.android.material.chip.ChipGroup
     private lateinit var list: RecyclerView
     private lateinit var welcome: View
     private lateinit var library: View
@@ -133,7 +131,6 @@ class MainActivity : AppCompatActivity() {
                 isLibrarySelected = false
                 homeFilterType = null
                 bottomNavigation.selectedItemId = R.id.navigation_home
-                setupHomeFilterChips()
                 render()
                 return
             }
@@ -238,9 +235,6 @@ class MainActivity : AppCompatActivity() {
 
         restoreStack(savedInstanceState)
         restoreFilters(savedInstanceState)
-        typeFilterScroll = findViewById(R.id.typeFilterScroll)
-        typeFilterGroup = findViewById(R.id.typeFilterGroup)
-        setupHomeFilterChips()
         bottomNavigation.selectedItemId =
             if (isLibrarySelected) R.id.navigation_library else R.id.navigation_home
         bottomNavigation.setOnItemSelectedListener { item ->
@@ -248,7 +242,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_home -> {
                     if (isLibrarySelected) homeFilterType = null
                     isLibrarySelected = false
-                    setupHomeFilterChips()
                     render()
                     true
                 }
@@ -263,7 +256,6 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.setOnItemReselectedListener { item ->
             if (item.itemId == R.id.navigation_home) {
                 homeFilterType = null
-                setupHomeFilterChips()
                 render()
             }
         }
@@ -290,7 +282,6 @@ class MainActivity : AppCompatActivity() {
                 homeFilterType = item.badge
                 isRecentsSelectionMode = false
                 selectedRecentUris.clear()
-                setupHomeFilterChips()
                 bottomNavigation.selectedItemId = R.id.navigation_home
                 render()
             }
@@ -306,45 +297,6 @@ class MainActivity : AppCompatActivity() {
             libraryCategories.getChildAt(index)
                 .findViewById<TextView>(R.id.categoryCount).text =
                 resources.getQuantityString(R.plurals.library_file_count, count, count)
-        }
-    }
-
-    private fun setupHomeFilterChips() {
-        typeFilterGroup.removeAllViews()
-        val allChip = com.google.android.material.chip.Chip(this).apply {
-            id = View.generateViewId()
-            text = getString(R.string.filter_all)
-            isCheckable = true
-            tag = null
-        }
-        typeFilterGroup.addView(allChip)
-
-        val chipIdMap = mutableMapOf<String, Int>()
-        SUPPORTED_FILTER_TYPES.forEach { item ->
-            val chip = com.google.android.material.chip.Chip(this).apply {
-                id = View.generateViewId()
-                text = getString(item.labelRes)
-                isCheckable = true
-                tag = item.badge
-            }
-            typeFilterGroup.addView(chip)
-            chipIdMap[item.badge] = chip.id
-        }
-
-        val currentBadge = homeFilterType
-        if (currentBadge != null && chipIdMap.containsKey(currentBadge)) {
-            typeFilterGroup.check(chipIdMap.getValue(currentBadge))
-        } else {
-            typeFilterGroup.check(allChip.id)
-        }
-
-        typeFilterGroup.setOnCheckedStateChangeListener { group, checkedIds ->
-            val checkedId = checkedIds.firstOrNull() ?: allChip.id
-            val selectedBadge = (group.findViewById<com.google.android.material.chip.Chip>(checkedId))?.tag as? String
-            if (homeFilterType != selectedBadge) {
-                homeFilterType = selectedBadge
-                render()
-            }
         }
     }
 
@@ -667,8 +619,6 @@ class MainActivity : AppCompatActivity() {
                 list.visibility =
                     if (!screen.welcome && !showLibrary) View.VISIBLE else View.GONE
                 library.visibility = if (showLibrary) View.VISIBLE else View.GONE
-                typeFilterScroll.visibility =
-                    if (here == null && !screen.welcome && !showLibrary) View.VISIBLE else View.GONE
                 bottomNavigation.visibility = if (here == null) View.VISIBLE else View.GONE
                 updateLibraryCategoryCounts()
                 if (screen.welcome || showLibrary) {

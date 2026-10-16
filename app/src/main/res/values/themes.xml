@@ -9,8 +9,8 @@
          are defined twice, in values/colors.xml and values-night/colors.xml, so this
          list is written once and night mode follows on its own.
 
-         windowBackground is here as well as colorBackground so the warm ground reaches
-         behind the list rather than showing through as the platform default.
+         The Android background roles follow colorSurface so the window and status bar use the
+         same surface as the layout, including when DynamicColors supplies a Monet palette.
     -->
     <style name="Theme.Gander" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/gander_primary</item>
@@ -46,16 +46,11 @@
         <item name="colorSurfaceInverse">@color/gander_inverse_surface</item>
         <item name="colorOnSurfaceInverse">@color/gander_inverse_on_surface</item>
         <item name="colorPrimaryInverse">@color/gander_inverse_primary</item>
-        <item name="android:colorBackground">@color/gander_surface</item>
-        <item name="android:windowBackground">@color/gander_surface</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar">@bool/gander_light_status_bar</item>
-        <!-- The status bar itself, on Android 14 and older, where the app colours it. With
-             nothing named here the platform used colorPrimaryDark, which Material 3 sets to
-             colorPrimary: the brand red under the dark icons asked for above, and a pale pink
-             under white ones at night. From Android 15 the app is drawn beneath the bar, which
-             already shows the surface there, so this changes nothing on those phones. Seen in
-             a screenshot on #30. -->
-        <item name="android:statusBarColor">@color/gander_surface</item>
+        <!-- Keep the system-drawn status bar on the same surface as the app. -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
     </style>
 
     <!-- The viewer's overflow menu in the app's night colours, on a phone set to light.
