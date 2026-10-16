@@ -347,20 +347,29 @@ class MainActivityTest {
         assertThat(titles).doesNotContain(".hidden.pdf")
     }
 
-    /** Inside a folder the toolbar names it, and the wordmark stands down. */
+    /** Root tab names and folder name are left in the toolbar title. */
     @Test
-    fun theToolbarNamesTheFolderYouAreIn() {
+    fun theToolbarTitleTracksTheSelectedTabAndFolder() {
         grantedFolder()
         val controller = home()
         val toolbar = controller.get()
             .findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        assertThat(toolbar.title.isNullOrEmpty()).isTrue()
+        assertThat(toolbar.title.toString()).isEqualTo(context.getString(R.string.navigation_home))
+
+        controller.get()
+            .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.navigation_library
+        shadowOf(context.mainLooper).idle()
+        assertThat(toolbar.title.toString()).isEqualTo(context.getString(R.string.navigation_library))
+
+        controller.get()
+            .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.navigation_home
+        shadowOf(context.mainLooper).idle()
 
         controller.clickRow("Documents")
 
         assertThat(toolbar.title.toString()).isEqualTo("Documents")
-        assertThat(controller.get().findViewById<View>(R.id.lockup).visibility)
-            .isEqualTo(View.GONE)
     }
 
     @Test

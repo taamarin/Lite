@@ -64,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     private val selectedRecentUris = mutableSetOf<String>()
     private val adapter = RowAdapter()
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var lockup: View
     private lateinit var progress: LinearProgressIndicator
     private lateinit var list: RecyclerView
     private lateinit var welcome: View
@@ -173,7 +172,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         toolbar = findViewById(R.id.toolbar)
-        lockup = findViewById(R.id.lockup)
         val headerColor = MaterialColors.getColor(
             toolbar,
             com.google.android.material.R.attr.colorSurface
@@ -567,8 +565,9 @@ class MainActivity : AppCompatActivity() {
         // folder's name, where Android puts it, beside the back arrow. A mark is an identity
         // and a folder name is a location, so these are two kinds of content sharing a slot
         // rather than one element that moves.
-        toolbar.title = here?.label.orEmpty()
-        lockup.visibility = if (here == null) View.VISIBLE else View.GONE
+        toolbar.title = here?.label ?: getString(
+            if (isLibrarySelected) R.string.navigation_library else R.string.navigation_home
+        )
         toolbar.navigationIcon =
             if (here == null) null
             else androidx.appcompat.content.res.AppCompatResources.getDrawable(this, R.drawable.ic_back)

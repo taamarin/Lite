@@ -10,60 +10,13 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- The wordmark is a sibling of the toolbar rather than a child of it.
-
-             Both app:titleCentered and a Toolbar child view with gravity=center centre
-             against the room left over once the navigation icon and the overflow button
-             have taken theirs, which puts the mark a visible 24dp off the middle of the
-             screen. An overlay in this FrameLayout centres against the whole width.
-
-             It is never clickable, so a tap lands on the toolbar underneath, and at about
-             105dp wide it cannot reach the overflow button on any phone. -->
-        <FrameLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorSurface">
-
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
-
-            <!-- Shown only at the root; render() hides it inside a folder, where the
-                 toolbar's own title carries the folder name beside the back arrow. -->
-            <LinearLayout
-                android:id="@+id/lockup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <!-- The adaptive icon itself, so this is the same object that was tapped
-                     to get here and there is no second copy of the art to drift. It
-                     carries the device's own icon mask, which is the shape the launcher
-                     drew it in a moment ago, and the debug variant's own icon in a debug
-                     build. -->
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:importantForAccessibility="no"
-                    android:src="@mipmap/ic_launcher" />
-
-                <!-- Filled white in the drawable and tinted here, because a ?attr colour
-                     resolved inside vector XML depends on the inflation path. -->
-                <ImageView
-                    android:id="@+id/wordmark"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="9dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_wordmark"
-                    app:tint="?attr/colorOnSurface" />
-            </LinearLayout>
-        </FrameLayout>
+            android:background="?attr/colorSurface"
+            app:titleCentered="false"
+            app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
 
         <!-- Sits between the toolbar and the list while a folder is being read, the
              same shape the viewer uses for a long save. Only appears if the read takes
