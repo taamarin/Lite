@@ -23,9 +23,11 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -172,6 +174,14 @@ class MainActivity : AppCompatActivity() {
 
         toolbar = findViewById(R.id.toolbar)
         lockup = findViewById(R.id.lockup)
+        val headerColor = MaterialColors.getColor(
+            toolbar,
+            com.google.android.material.R.attr.colorSurface
+        )
+        findViewById<View>(R.id.root).setBackgroundColor(headerColor)
+        window.statusBarColor = headerColor
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars =
+            ColorUtils.calculateLuminance(headerColor) > 0.5
         toolbar.setNavigationOnClickListener { backCallback.handleOnBackPressed() }
         // render() rewrites the title and navigation icon on every resume and on
         // every folder change, but never touches the menu, so inflating once here
