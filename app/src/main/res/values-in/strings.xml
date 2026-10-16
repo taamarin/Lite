@@ -29,4 +29,11 @@
     <string name="chip_word">Word</string>
     <string name="chip_excel">Excel</string>
     <string name="chip_ppt">PowerPoint</string>
+    <string name="navigation_home">Beranda</string>
+    <string name="navigation_library">Pustaka</string>
+    <string name="library_title">Pustaka Anda</string>
+    <string name="library_subtitle">Jelajahi file terbaru berdasarkan kategori.</string>
+    <plurals name="library_file_count">
+        <item quantity="other">%1$d file</item>
+    </plurals>
 </resources>

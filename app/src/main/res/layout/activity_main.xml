@@ -10,60 +10,13 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- The wordmark is a sibling of the toolbar rather than a child of it.
-
-             Both app:titleCentered and a Toolbar child view with gravity=center centre
-             against the room left over once the navigation icon and the overflow button
-             have taken theirs, which puts the mark a visible 24dp off the middle of the
-             screen. An overlay in this FrameLayout centres against the whole width.
-
-             It is never clickable, so a tap lands on the toolbar underneath, and at about
-             105dp wide it cannot reach the overflow button on any phone. -->
-        <FrameLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorSurface">
-
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
-
-            <!-- Shown only at the root; render() hides it inside a folder, where the
-                 toolbar's own title carries the folder name beside the back arrow. -->
-            <LinearLayout
-                android:id="@+id/lockup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <!-- The adaptive icon itself, so this is the same object that was tapped
-                     to get here and there is no second copy of the art to drift. It
-                     carries the device's own icon mask, which is the shape the launcher
-                     drew it in a moment ago, and the debug variant's own icon in a debug
-                     build. -->
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:importantForAccessibility="no"
-                    android:src="@mipmap/ic_launcher" />
-
-                <!-- Filled white in the drawable and tinted here, because a ?attr colour
-                     resolved inside vector XML depends on the inflation path. -->
-                <ImageView
-                    android:id="@+id/wordmark"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="9dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_wordmark"
-                    app:tint="?attr/colorOnSurface" />
-            </LinearLayout>
-        </FrameLayout>
+            android:background="?attr/colorSurface"
+            app:titleCentered="false"
+            app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
 
         <!-- Sits between the toolbar and the list while a folder is being read, the
              same shape the viewer uses for a long save. Only appears if the read takes
@@ -76,27 +29,6 @@
             android:visibility="gone"
             app:indicatorColor="@array/google_colors"
             app:trackCornerRadius="0dp" />
-
-        <HorizontalScrollView
-            android:id="@+id/typeFilterScroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:clipToPadding="false"
-            android:visibility="gone">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/typeFilterGroup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:singleLine="true"
-                app:singleSelection="true"
-                app:selectionRequired="true" />
-        </HorizontalScrollView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/list"
@@ -183,6 +115,56 @@
                     android:text="@string/add_folder" />
             </LinearLayout>
         </ScrollView>
+
+        <ScrollView
+            android:id="@+id/library"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingStart="20dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/library_title"
+                    android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="24dp"
+                    android:text="@string/library_subtitle"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <LinearLayout
+                    android:id="@+id/libraryCategories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainer"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_navigation" />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
